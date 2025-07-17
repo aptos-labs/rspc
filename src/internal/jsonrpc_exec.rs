@@ -145,11 +145,11 @@ pub async fn handle_json_rpc<TCtx, TMeta>(
             });
     }
 
-    let (path, input, procedures, sub_id) = match req.inner {
-        RequestInner::Query { path, input } => (path, input, router.queries(), None),
-        RequestInner::Mutation { path, input } => (path, input, router.mutations(), None),
+    let (path, input, procedures, sub_id, kind) = match req.inner {
+        RequestInner::Query { path, input } => (path, input, router.queries(), None, ProcedureKind::Query),
+        RequestInner::Mutation { path, input } => (path, input, router.mutations(), None, ProcedureKind::Mutation),
         RequestInner::Subscription { path, input } => {
-            (path, input.1, router.subscriptions(), Some(input.0))
+            (path, input.1, router.subscriptions(), Some(input.0), ProcedureKind::Subscription)
         }
         RequestInner::SubscriptionStop { input } => {
             subscriptions.remove(&input).await;
@@ -165,7 +165,7 @@ pub async fn handle_json_rpc<TCtx, TMeta>(
                 ctx,
                 input.unwrap_or(Value::Null),
                 RequestContext {
-                    kind: ProcedureKind::Query,
+                    kind,
                     path,
                 },
             )
